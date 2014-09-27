@@ -38,7 +38,7 @@ PImage currFrame;
 boolean bSerialDebug = true;
 
 int currRow = 0;
-int thresh  = 30;
+byte thresh  = (byte)200;
 
 float tmp_x0 = 0, tmp_y0 = 0, tmp_x1 = 0, tmp_y1 = 0;
 float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
@@ -194,6 +194,7 @@ void parseSerialData() {
 void reqImage(request_t req) {
       currRow = 0;
       serialPort.clear();
+      serialPort.write("thresh "+Integer.toString(int(thresh))+G_DEF.LF);
       serialPort.write("send "+Integer.toString(req.getParam())+G_DEF.LF);
 }
   
@@ -204,9 +205,9 @@ void reqTracking(request_t req) {
     
       serialPort.clear();
       if (req == request_t.TRACKDARK)
-          serialPort.write("dark "+Integer.toString(225)+G_DEF.LF);
+          serialPort.write("dark "+Integer.toString(int(thresh))+G_DEF.LF);
       else if (req == request_t.TRACKBRIG)
-          serialPort.write("brig "+Integer.toString(225)+G_DEF.LF);
+          serialPort.write("brig "+Integer.toString(int(thresh))+G_DEF.LF);
        
 }
   
@@ -223,6 +224,8 @@ void drawInfo() {
    fill(255);
    textAlign(LEFT, TOP);
    text(modeStr, 20, height-G_DEF.FONT_BKG_SIZE);
+   textAlign(RIGHT, TOP);
+   text("thresh (+/-): "+int(thresh), width-20, height-G_DEF.FONT_BKG_SIZE);
    popMatrix();
    popStyle();
 }
@@ -275,7 +278,6 @@ void drawTracking() {
          rect( x0*G_DEF.DRAW_SCALE, y0*G_DEF.DRAW_SCALE,
                (x1-x0)*G_DEF.DRAW_SCALE, (y1-y0)*G_DEF.DRAW_SCALE );
    }
-   noStroke();
    popStyle();
 }
 
@@ -390,6 +392,10 @@ void keyPressed() {
                
            break; 
    case 'k':  bKalmanEnabled = !bKalmanEnabled;
+           break; 
+   case '+':  thresh++;
+           break; 
+   case '-':  thresh--;
            break; 
    case 's':  saveFrame(); break; 
    default: break;

@@ -180,15 +180,21 @@ void parseSerialBuffer(void) {
     } 
     else if (strlen((char *) rcvbuf) > 5 &&
             strncmp((char *) rcvbuf, "dark ", 5) == 0) {
+              thresh = atoi((char *) (rcvbuf + 5));
               serialPtr->print("ACK\n");
               serialRequest = SEND_DARK;
               bRequestPending = true;
     }
     else if (strlen((char *) rcvbuf) > 5 &&
             strncmp((char *) rcvbuf, "brig ", 5) == 0) {
+              thresh = atoi((char *) (rcvbuf + 5));
               serialPtr->print("ACK\n");
               serialRequest = SEND_BRIG;
               bRequestPending = true;
+    }
+    else if (strlen((char *) rcvbuf) > 7 &&
+            strncmp((char *) rcvbuf, "thresh ", 7) == 0) {
+              thresh = atoi((char *) (rcvbuf + 7));
     }
 }
 // *****************************************************
@@ -244,19 +250,16 @@ void processRequest() {
                               serialPtr->write(rowBuf, serialRequest); 
                               serialPtr->write(LF); 
                           } break;
-          case SEND_8PPB: thresh = (uint8_t)(analogRead(A0) / 4);
-                          for (int i =0; i< fH; i++) {
+          case SEND_8PPB: for (int i =0; i< fH; i++) {
                               fifo_readRow8ppb(rowBuf, rowBuf+serialRequest, thresh);
                               serialPtr->write(rowBuf, serialRequest); 
                               serialPtr->write(LF); 
                           } break;
-          case SEND_BRIG: thresh = (uint8_t)(analogRead(A0) / 4);
-                          fifo_getBrig(rowBuf, fW, fH, 8, thresh);
+          case SEND_BRIG: fifo_getBrig(rowBuf, fW, fH, 8, thresh);
                           serialPtr->write(rowBuf, 4);
                           serialPtr->write(LF); 
                           break;
-          case SEND_DARK: thresh = (uint8_t)(analogRead(A0) / 4);
-                          fifo_getDark(rowBuf, fW, fH, 8, thresh);
+          case SEND_DARK: fifo_getDark(rowBuf, fW, fH, 8, thresh);
                           serialPtr->write(rowBuf, 4);
                           serialPtr->write(LF); 
                           break;
