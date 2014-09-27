@@ -67,8 +67,6 @@ void setup() {
   // List all the available serial serialPorts:
   printArray(Serial.list());
 
-
-  String serialPortName = Serial.list()[0];
   delay(500);
   serialPort = new Serial(this, "/dev/ttyUSB0", G_DEF.BAUDRATE);
   serialPort.bufferUntil(G_DEF.LF);
