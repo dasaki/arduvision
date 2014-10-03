@@ -373,27 +373,28 @@
 
 const struct regval_list qqvga_yuv_ov772x[] PROGMEM = {
 
-   {OV772x_REG_COM7, OV772x_REG_SLCT_QVGA}, // QVGA, YUY
+   {OV772x_REG_COM7, OV772x_REG_SLCT_VGA}, // QVGA, YUY
    {OV772x_REG_COM12, 0x03}, // DC offset compensation for analog process
-   {0x2a, 0x00}, // EXHCH
    {0x11, 0x01}, // 00/01/03/07 for 60/30/15/7.5fps - set to 30fps for QQVGA
 
    {OV772x_REG_DSP_CTRL2, 0x2f}, // DCW enable, zoom out enable
 
+  // 160x120
    {0xA0, 0x0a}, // SCAL0, 1/4 vertical & horizontal down sampling
    {0xA1, 0x40}, // SCAL1, Horizontal Zoom Out Control, set ratio to 1/1   
    {0xA2, 0x40}, // SCAL2, Vertical Zoom Out Control, set ratio to 1/1   
   
    {OV772x_REG_HSTART, 0x23},
-   {OV772x_REG_HSIZE, 0xa0}, // Horizontal Data Output Size MSBs
+   {OV772x_REG_HSIZE, 0xa0}, // Horizontal Sensor Size: full VGA (no windowing)
    {0x29, 0x28}, // Horizontal Data Output Size (160px) MSBs
    {OV772x_REG_VSTART, 0x07},
-   {OV772x_REG_VSIZE, 0xf0}, // Vertical Data Output Size MSBs
+   {OV772x_REG_VSIZE, 0xf0}, // Vertical Sensor Size: full VGA  (no windowing)
    {0x2c, 0x3c}, // Vertical Data Output Size (120px)MSBs
    {OV772x_REG_HREF, 0x00},
+   {0x2a, 0x00}, // EXHCH
    {0x15,0x01}, // Output data range selection, Data from [10] to [F0] (8 MSBs)
 
-      { 0xff, 0xff }	// END MARKER
+   { 0xff, 0xff }	// END MARKER
 
 };
 
