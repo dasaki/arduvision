@@ -1,4 +1,4 @@
-/**************************************************************
+  /**************************************************************
  *
  *  Part of the ARDUVISION project
  *
@@ -38,8 +38,9 @@ PImage currFrame;
 boolean bSerialDebug = true;
 
 int currRow = 0;
-byte thresh  = (byte)200;
+byte thresh  = (byte)130;
 
+PVector lastCenter = new PVector(0,0);
 float tmp_x0 = 0, tmp_y0 = 0, tmp_x1 = 0, tmp_y1 = 0;
 float x0 = 0, y0 = 0, x1 = 0, y1 = 0;
 
@@ -90,7 +91,7 @@ void draw() {
                             case RECEIVED:  drawTracking();
                                             drawFPS();
                                             reqStatus = requestStatus_t.IDLE;
-                                            // continue
+                                            break;
                             case TIMEOUT:   
                             case IDLE:      reqTracking(request);
                                             reqStatus = requestStatus_t.REQUESTED; 
@@ -152,7 +153,7 @@ void serialEvent(Serial serialPort) {
         parseSerialData();
     }
     else {
-      if (bSerialDebug) print(serialPort.readStringUntil(G_DEF.LF));
+      if (bSerialDebug) print(serialPort.readStringUntil(G_DEF.LF)); 
     }
 }
 
@@ -163,11 +164,10 @@ void parseSerialData() {
   switch (request) {
       case NONE:         break;
       case TRACKDARK: 
-      case TRACKBRIG:     tmp_x0 = serialPort.read();
-                          tmp_y0 = serialPort.read();
-                          tmp_x1 = serialPort.read();
-                          tmp_y1 = serialPort.read();
-                         // if (bSerialDebug) println("x0: "+tmp_x0+"   y0: "+tmp_y0+"    x1: "+tmp_x1+"   y1: "+tmp_y1);
+      case TRACKBRIG:     tmp_x0 = int(serialPort.read());
+                          tmp_y0 = int(serialPort.read());
+                          tmp_x1 = int(serialPort.read());
+                          tmp_y1 = int(serialPort.read());
                           reqStatus = requestStatus_t.RECEIVED;
                           break;
        case STREAM0PPB:
@@ -219,7 +219,7 @@ void drawInfo() {
    pushStyle();
    pushMatrix();
    noStroke();
-   fill(0);
+   fill(64);
    rect(0, height-G_DEF.FONT_BKG_SIZE, width, G_DEF.FONT_BKG_SIZE);
    fill(255);
    textAlign(LEFT, TOP);
@@ -259,10 +259,18 @@ void drawTracking() {
    noFill(); 
    strokeWeight(3);
    
-   if (tmp_x1-tmp_x0 > 5 && tmp_x1-tmp_x0 < 60 && tmp_y1-tmp_y0 < 60 && tmp_y1-tmp_y0 > 5) {
+   if (tmp_x1-tmp_x0 > 3 && tmp_x1-tmp_x0 < G_DEF.F_W/2 && tmp_y1-tmp_y0 < G_DEF.F_H/2 && tmp_y1-tmp_y0 > 3) {
       stroke(0);  
-      rect((float)x0*G_DEF.DRAW_SCALE,(float)y0*G_DEF.DRAW_SCALE, (float)(x1-x0)*G_DEF.DRAW_SCALE, (float)(y1-y0)*G_DEF.DRAW_SCALE );
-         if (bKalmanEnabled) {
+         float minX = width-x0*G_DEF.DRAW_SCALE; 
+         float minY = y0*G_DEF.DRAW_SCALE;
+         float wX = -(x1-x0)*G_DEF.DRAW_SCALE;
+         float hY = (y1-y0)*G_DEF.DRAW_SCALE;        
+         float centX = minX+wX/2;
+         float centY = minY+hY/2;
+         rect(minX, minY, wX, hY );
+      line( centX-10, centY, centX+10, centY );
+      line( centX, centY-10, centX, centY+10 );
+        if (bKalmanEnabled) {
              x0 = (float)filter_x0.update(tmp_x0);
              y0 = (float)filter_y0.update(tmp_y0);
              x1 = (float)filter_x1.update(tmp_x1);
@@ -274,9 +282,24 @@ void drawTracking() {
              x1 = tmp_x1;
              y1 = tmp_y1;
          }
-         stroke(255);         
-         rect( x0*G_DEF.DRAW_SCALE, y0*G_DEF.DRAW_SCALE,
-               (x1-x0)*G_DEF.DRAW_SCALE, (y1-y0)*G_DEF.DRAW_SCALE );
+         stroke(255,0,0); 
+         minX = width-x0*G_DEF.DRAW_SCALE; 
+         minY = y0*G_DEF.DRAW_SCALE;
+         wX = -(x1-x0)*G_DEF.DRAW_SCALE;
+         hY = (y1-y0)*G_DEF.DRAW_SCALE;        
+         centX = minX+wX/2;
+         centY = minY+hY/2;
+         
+         rect(minX, minY, wX, hY );
+
+         
+         line( centX-10, centY, centX+10, centY );
+         line( centX, centY-10, centX, centY+10 );
+         stroke(0,0,255);
+         line(lastCenter.x, lastCenter.y,centX, centY);
+         lastCenter.x = centX;
+         lastCenter.y = centY;
+         
    }
    popStyle();
 }
@@ -407,4 +430,5 @@ void keyPressed() {
 // ************************************************************
 
 void mousePressed() {
+  println(mouseY);
 }
