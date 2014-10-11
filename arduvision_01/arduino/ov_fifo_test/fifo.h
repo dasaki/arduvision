@@ -1,6 +1,3 @@
-#ifndef _FIFO_H
-#define _FIFO_H
-
 #include <avr/io.h>
 #include <Arduino.h>
 #include "IO_config.h"
@@ -22,9 +19,9 @@ void  __inline__ fifo_skipBytes(unsigned long nBytes)
 {
     while (nBytes > 0) {
         SET_RCLK_H;
-        //_delay_cycles(10);
+        _delay_cycles(10);
         SET_RCLK_L;
-        //_delay_cycles(10);
+        _delay_cycles(10);
         nBytes--;
     }
 }
@@ -192,84 +189,54 @@ static __inline__ void fifo_readRow8ppb(uint8_t* _rowStart, uint8_t* _rowEnd, ui
 // --------------------------------------------
 static __inline__ void fifo_getBrig(uint8_t* _rowStart, uint8_t _frW,  uint8_t _frH, uint8_t _border, uint8_t _thresh)
 {
-  uint8_t pix = 0;
-  uint8_t x0 = 255;
-  uint8_t y0 = 255;
-  uint8_t x1 = 0;
-  uint8_t y1 = 0;
-  uint8_t borderBytesX = _border*2;
-  uint8_t borderBytesY = _border*_frW*2;
   
-  fifo_skipBytes(borderBytesY);
-  for (uint8_t j =_border; j < _frH-_border; j++) {
-       fifo_skipBytes(borderBytesX);
-      for (uint8_t i =_border; i < _frW-_border; i++) {
-            SET_RCLK_H;
-            pix = DATA_PINS;
-            SET_RCLK_L;
-            if ( pix > _thresh) {
-              if (i > x1) x1 = i;
-              else if (i < x0) x0 = i;
-              if (y0 > _frH) y0 = j;
-              y1 = j;
-            }
-            // skip "U/v" byte
-            SET_RCLK_H;
-            //_delayNanoseconds(5);
-            SET_RCLK_L;
-            //_delayNanoseconds(5);
-       } 
-       fifo_skipBytes(borderBytesX);
-    } 
- 
-    if ( (x0 > _border) && (x1 < _frW-_border) &&
-         (y0 > _border) && (y1 < _frH-_border)) {   
-        *_rowStart++ = x0;
-        *_rowStart++ = y0;
-        *_rowStart++ = x1;
-        *_rowStart++ = y1;
-       }
 }
 // --------------------------------------------
 static __inline__ void fifo_getDark(uint8_t* _rowStart, uint8_t _frW,  uint8_t _frH, uint8_t _border, uint8_t _thresh)
 {
+  uint8_t i = 0;
+  uint8_t j = 0;
   uint8_t pix = 255;
   uint8_t x0 = 255;
   uint8_t y0 = 255;
   uint8_t x1 = 0;
   uint8_t y1 = 0;
-  uint8_t borderBytesX = _border*2;
-  uint8_t borderBytesY = _border*_frW*2;
+  uint8_t skipBytesX = _border * 2 ; // BPP
+  uint8_t skipBytesX2 = skipBytesX * 2 + 2;
+  uint16_t skipBytesY = (_border * _frW) * 2; // BPP
+   
+  _frH -= _border;
+  _frW -= _border+1;
   
-  fifo_skipBytes(borderBytesY);
-  for (uint8_t j =_border; j < _frH-_border; j++) {
-       fifo_skipBytes(borderBytesX);
-      for (uint8_t i =_border; i < _frW-_border; i++) {
+  fifo_skipBytes(skipBytesY);
+  fifo_skipBytes(skipBytesX);
+  for (j =_border; j < _frH; j++) {
+      for (i =_border; i < _frW; i++) {
+            // Y value of Nth pixel
             SET_RCLK_H;
             pix = DATA_PINS;
             SET_RCLK_L;
             if (pix < _thresh) {
               if (i > x1) x1 = i;
               else if (i < x0) x0 = i;
-              if (y0 > _frH) y0 = j;
+              if (y0 == 255) y0 = j; // first time only, y0 = 255
               y1 = j;
             }
             // skip "U/v" byte
             SET_RCLK_H;
-            //_delayNanoseconds(5);
+            _delayNanoseconds(5);
             SET_RCLK_L;
-            //_delayNanoseconds(5);
-       } 
-       fifo_skipBytes(borderBytesX);
-    } 
+            _delayNanoseconds(5);
+     } 
+     fifo_skipBytes(skipBytesX2);
+  } 
  
-    if ( (x0 > _border) && (x1 < _frW-_border) &&
-         (y0 > _border) && (y1 < _frH-_border)) {   
-        *_rowStart++ = x0;
-        *_rowStart++ = y0;
-        *_rowStart++ = x1;
-        *_rowStart++ = y1;
-       }
+  if ( (x0 < x1 ) && (y0 < y1 ) ) {   
+      *_rowStart++ = x0;
+      *_rowStart++ = y0;
+      *_rowStart++ = x1;
+      *_rowStart++ = y1;
+  }
 }
 // --------------------------------------
 static __inline__ void fifo_loadFrameFast(void)
@@ -298,4 +265,4 @@ static __inline__ void fifo_loadFrameFast(void)
 }
 
 
-#endif /* _FIFO_H */
+

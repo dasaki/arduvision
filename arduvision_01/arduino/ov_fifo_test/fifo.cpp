@@ -1,12 +1,3 @@
-/*********************************************
- *
- *   Part of the ARDUVISION project
- *
- *   by David Sanz Kirbis
- *
- *   More info: http://www.arduvision.com
- *
- **********************************************/
 
 #include "fifo.h"
 
@@ -29,17 +20,12 @@ void fifo_loadFrame(void)
 // Reset the fifo read pointer 
 void fifo_rrst(void)
 {
-  ENABLE_RRST;// reset the read pointer
-  _delayMicroseconds(1);
-  SET_RCLK_L;
-  _delayMicroseconds(1);
-  SET_RCLK_H;
-  _delayMicroseconds(1);
-  SET_RCLK_L;
-  _delayMicroseconds(1);
-  DISABLE_RRST; 
-  _delayMicroseconds(1);
-  SET_RCLK_H;
+      ENABLE_RRST;
+    //_delayNanoseconds(5);
+    SET_RCLK_H;
+    //_delayNanoseconds(5);
+    SET_RCLK_L;
+    DISABLE_RRST;
 }
 //**************************
 
