@@ -4,7 +4,7 @@
 //
 public class simpleKalman {
     private double Q = 0.0001;
-    private double R = 0.001;
+    private double R = 0.00025;
     private double P = 1, X = 0, K;
      
     private void measurementUpdate(){
