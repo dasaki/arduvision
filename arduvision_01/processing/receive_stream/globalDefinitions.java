@@ -10,14 +10,14 @@ final class G_DEF {
                 public final static int   F_W          = 80;
                 public final static int   F_H          = 60;
                 public final static int   BPP          = 2;
-                public final static int   FONT_SIZE    = 24;
+                public final static int   FONT_SIZE    = 18;
                 public final static int   FONT_BKG_SIZE  = (int)(FONT_SIZE*(float)1.5);
                 public final static float DRAW_SCALE   = (float)SCR_W / (float)F_W;
 
                 public final static int   MAX_ROW_LEN      = F_W*BPP; // pixels + LF character
                 public final static int   MAX_ROW_BUFF_LEN = MAX_ROW_LEN+1; // pixels + LF character
                 public final static int   ACK_BUF_LEN      = 4; // serial buffer to store "ACK"+LF
-                public final static long  SERIAL_TIMEOUT   = 1; // milliseconds to wait for ACK
+                public final static long  SERIAL_TIMEOUT   = 2; // milliseconds to wait for ACK
         }
 
 enum requestStatus_t {
