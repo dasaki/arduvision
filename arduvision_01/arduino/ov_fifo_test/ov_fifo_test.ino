@@ -95,13 +95,13 @@ static const uint8_t fH = 60;
 static const frameFormat_t frameFormat = FF_QQQVGA;
 #endif
 
-
+static const uint8_t TRACK_BORDER = 4; // always multiple of 2 (YUYV: 2 pixels)
 static const uint8_t YUYV_BPP = 2; // bytes per pixel
 static const unsigned int MAX_FRAME_LEN = fW * YUYV_BPP;
 byte rowBuf[MAX_FRAME_LEN];
 unsigned int volatile nRowsSent = 0;
 boolean volatile bRequestPending = false;
-boolean volatile bFifoLocked = false;
+boolean volatile bNewFrame = false;
 uint8_t volatile thresh = 128;
 
 enum serialRequest_t {
@@ -152,58 +152,24 @@ void setup()
 // *****************************************************
 void loop()
 {  
-  while (serialPtr->available()) {
-    // get the new byte:
-    c = serialPtr->read();
-     if ((c != LF) && (c >= 32) && (c <= 126)) {
-            rcvbuf[rcvbufpos++] = c;
-        } else if (c == LF) {
-            rcvbuf[rcvbufpos++] = 0;
-            rcvbufpos = 0;
-            parseSerialBuffer();
-        }
-  }
+ 
 
 }
 
-// *****************************************************
-//               PARSE SERIAL BUFFER
-// ****************************************************
-void parseSerialBuffer(void) {
-   if (strcmp((char *) rcvbuf, "hello") == 0) {
-        serialPtr->print("Hello to you too!\n");
-    } else if ( strlen((char *) rcvbuf) > 5 && 
-                strncmp((char *) rcvbuf, "send ", 5) == 0) {
-        serialRequest = (serialRequest_t)atoi((char *) (rcvbuf + 5)); 
-        serialPtr->print("ACK\n");
-        bRequestPending = true;       
-    } 
-    else if (strlen((char *) rcvbuf) > 5 &&
-            strncmp((char *) rcvbuf, "dark ", 5) == 0) {
-              thresh = atoi((char *) (rcvbuf + 5));
-              serialPtr->print("ACK\n");
-              serialRequest = SEND_DARK;
-              bRequestPending = true;
-    }
-    else if (strlen((char *) rcvbuf) > 5 &&
-            strncmp((char *) rcvbuf, "brig ", 5) == 0) {
-              thresh = atoi((char *) (rcvbuf + 5));
-              serialPtr->print("ACK\n");
-              serialRequest = SEND_BRIG;
-              bRequestPending = true;
-    }
-    else if (strlen((char *) rcvbuf) > 7 &&
-            strncmp((char *) rcvbuf, "thresh ", 7) == 0) {
-              thresh = atoi((char *) (rcvbuf + 7));
-    }
-}
 // *****************************************************
 //               VSYNC INTERRUPT HANDLER
 // *****************************************************
 void static __inline__ vsyncIntFunc() {
-      if (!bFifoLocked) {
-          DISABLE_WREN; // disable writing to fifo
-
+      DISABLE_WREN; // disable writing to fifo
+          
+      if (bRequestPending && bNewFrame) {
+        detachInterrupt(VSYNC_INT);
+        processRequest();
+        bRequestPending = false;
+        bNewFrame = false;
+        attachInterrupt(VSYNC_INT, &vsyncIntFunc, FALLING);
+      }
+      else {
           ENABLE_WRST;
           //__delay_cycles(500);
           SET_RCLK_H;
@@ -212,23 +178,18 @@ void static __inline__ vsyncIntFunc() {
           DISABLE_WRST;
           _delay_cycles(10);
          
-          if (bRequestPending) {
-            detachInterrupt(VSYNC_INT);
-            bFifoLocked = true;
-            processRequest();
-            bRequestPending = false;
-            bFifoLocked = false;
-            attachInterrupt(VSYNC_INT, &vsyncIntFunc, FALLING);
-          }
           ENABLE_WREN; // enable writing to fifo
-      } 
+          bNewFrame = true;
+      }
 }
 
 // **************************************************************
 //                      PROCESS SERIAL REQUEST
 // **************************************************************
 void processRequest() {
+  
         fifo_rrst();
+        
         switch (serialRequest) {
           case SEND_0PPB: for (int i =0; i< fH; i++) {
                               fifo_readRow0ppb(rowBuf, rowBuf+serialRequest);
@@ -255,11 +216,11 @@ void processRequest() {
                               serialPtr->write(rowBuf, serialRequest); 
                               serialPtr->write(LF); 
                           } break;
-          case SEND_BRIG: fifo_getBrig(rowBuf, fW, fH, 8, thresh);
+          case SEND_BRIG: fifo_getBrig(rowBuf, fW, fH, TRACK_BORDER, thresh);
                           serialPtr->write(rowBuf, 4);
                           serialPtr->write(LF); 
                           break;
-          case SEND_DARK: fifo_getDark(rowBuf, fW, fH, 8, thresh);
+          case SEND_DARK: fifo_getDark(rowBuf, fW, fH, TRACK_BORDER, thresh);
                           serialPtr->write(rowBuf, 4);
                           serialPtr->write(LF); 
                           break;
@@ -289,10 +250,53 @@ void calcFPS(unsigned int &currentFPS) {
       while (!GET_VSYNC);// wait for a new frame to start
       frameCount++;
 }
+// **************************************************************
+//                      SERIAL EVENT
+// **************************************************************
 
-/*
 void serialEvent() {
-  
+  while (serialPtr->available()) {
+    // get the new byte:
+    c = serialPtr->read();
+    if (c != LF) {
+            rcvbuf[rcvbufpos++] = c;
+    } else if (c == LF) {
+        rcvbuf[rcvbufpos++] = 0;
+        rcvbufpos = 0;
+        parseSerialBuffer();
+    }
+  }
 }
-*/
+
+// *****************************************************
+//               PARSE SERIAL BUFFER
+// ****************************************************
+void parseSerialBuffer(void) {
+       if (strcmp((char *) rcvbuf, "hello") == 0) {
+            serialPtr->print("Hello to you too!\n");
+        } else if ( strlen((char *) rcvbuf) > 5 && 
+                    strncmp((char *) rcvbuf, "send ", 5) == 0) {
+            serialRequest = (serialRequest_t)atoi((char *) (rcvbuf + 5)); 
+            serialPtr->print("ACK\n");
+            bRequestPending = true;       
+        } 
+        else if (strlen((char *) rcvbuf) > 5 &&
+                strncmp((char *) rcvbuf, "dark ", 5) == 0) {
+                  thresh = atoi((char *) (rcvbuf + 5));
+                  serialPtr->print("ACK\n");
+                  serialRequest = SEND_DARK;
+                  bRequestPending = true;
+        }
+        else if (strlen((char *) rcvbuf) > 5 &&
+                strncmp((char *) rcvbuf, "brig ", 5) == 0) {
+                  thresh = atoi((char *) (rcvbuf + 5));
+                  serialPtr->print("ACK\n");
+                  serialRequest = SEND_BRIG;
+                  bRequestPending = true;
+        }
+        else if (strlen((char *) rcvbuf) > 7 &&
+                strncmp((char *) rcvbuf, "thresh ", 7) == 0) {
+                  thresh = atoi((char *) (rcvbuf + 7));
+        }
+}
 
