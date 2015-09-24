@@ -140,10 +140,11 @@ void draw() {
 void serialEvent(Serial serialPort) {
 
     if (reqStatus == requestStatus_t.REQUESTED) {
-          if ( (serialPort.readBytesUntil(G_DEF.LF, ackBuff) >= 3) && 
-               (ackBuff[0] == 'A') &&
-               (ackBuff[1] == 'C') &&
-               (ackBuff[2] == 'K') ) {
+          int numBytesRead = serialPort.readBytesUntil(G_DEF.LF, ackBuff);
+          if ((numBytesRead >= 4) && 
+              (ackBuff[numBytesRead-4] == 'A') &&
+              (ackBuff[numBytesRead-3] == 'C') &&
+              (ackBuff[numBytesRead-2] == 'K') ) {
             reqStatus = requestStatus_t.ARRIVING;
           } else if (millis() > waitTimeout) {
             reqStatus = requestStatus_t.TIMEOUT;
