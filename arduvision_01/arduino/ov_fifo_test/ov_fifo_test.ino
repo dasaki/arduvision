@@ -159,7 +159,7 @@ void loop()
 // *****************************************************
 //               VSYNC INTERRUPT HANDLER
 // *****************************************************
-void static __inline__ vsyncIntFunc() {
+void __inline__ vsyncIntFunc() {
       DISABLE_WREN; // disable writing to fifo
           
       if (bRequestPending && bNewFrame) {
