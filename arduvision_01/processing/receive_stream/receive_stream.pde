@@ -55,7 +55,7 @@ simpleKalman filter_y1 = new simpleKalman();
 // ************************************************************
  
 void setup() {
-  size(G_DEF.SCR_W, G_DEF.SCR_H+G_DEF.FONT_BKG_SIZE);
+  size(640, 507);
   frameRate(30);
   
   currFrame = createImage(G_DEF.F_W, G_DEF.F_H, RGB);
