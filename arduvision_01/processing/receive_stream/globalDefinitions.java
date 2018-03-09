@@ -17,7 +17,7 @@ final class G_DEF {
                 public final static int   MAX_ROW_LEN      = F_W*BPP; // pixels + LF character
                 public final static int   MAX_ROW_BUFF_LEN = MAX_ROW_LEN+1; // pixels + LF character
                 public final static int   ACK_BUF_LEN      = 255; // serial buffer to store "ACK"+LF
-                public final static long  SERIAL_TIMEOUT   = 2; // milliseconds to wait for ACK
+                public final static long  SERIAL_TIMEOUT   = 50; // milliseconds to wait for ACK
         }
 
 enum requestStatus_t {
