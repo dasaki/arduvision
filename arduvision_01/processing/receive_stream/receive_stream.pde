@@ -56,7 +56,7 @@ simpleKalman filter_y1 = new simpleKalman();
  
 void setup() {
   size(640, 507);
-  frameRate(30);
+  frameRate(99);
   noSmooth();  
   currFrame = createImage(G_DEF.F_W, G_DEF.F_H, RGB);
   
@@ -112,7 +112,6 @@ void draw() {
                             case RECEIVED:  reqStatus = requestStatus_t.PROCESSING;
                                             buff2pixFrame(pix, currFrame, request);
                                             image(currFrame,0,0, G_DEF.F_W*G_DEF.DRAW_SCALE,G_DEF.F_H*G_DEF.DRAW_SCALE);
-                                            smooth();
                                             drawFPS();
                                             reqStatus = requestStatus_t.IDLE;
                                             break;
