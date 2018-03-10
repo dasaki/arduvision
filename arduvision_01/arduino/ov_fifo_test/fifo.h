@@ -118,71 +118,24 @@ static __inline__ void fifo_readRow4ppb(uint8_t* _rowStart, uint8_t* _rowEnd)
 static __inline__ void fifo_readRow8ppb(uint8_t* _rowStart, uint8_t* _rowEnd, uint8_t thresh)
 {
     uint8_t pixValue = 0;
-    while (_rowStart != _rowEnd) {
-
-      SET_RCLK_H;
-      pixValue = (DATA_PINS > thresh);
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      pixValue |= ((DATA_PINS > thresh) << 1);
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      SET_RCLK_L;
-
-      //----------------------
-      
-      SET_RCLK_H;
-      pixValue |= ((DATA_PINS > thresh) << 2);
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      pixValue |= ((DATA_PINS > thresh) << 3);
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      SET_RCLK_L;
-
-      //----------------------
-      
-      SET_RCLK_H;
-      pixValue |= ((DATA_PINS > thresh) << 4);
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      pixValue |= ((DATA_PINS > thresh) << 5);
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      SET_RCLK_L;
-
-      //----------------------
-      
-      SET_RCLK_H;
-      pixValue |= ((DATA_PINS > thresh) << 6);
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      pixValue |= ((DATA_PINS > thresh) << 7);
-      SET_RCLK_L;
-
-      SET_RCLK_H;
-      SET_RCLK_L;
-
-      *_rowStart++ = pixValue;
+    uint8_t bitIndex = 0;
+    
+    while (_rowStart != _rowEnd ) {
+        //read "Y" byte
+        SET_RCLK_H;
+        pixValue |= (((DATA_PINS  & 0xF8) > thresh) << bitIndex);
+        SET_RCLK_L;
+        
+        // skip "U/V" byte
+        SET_RCLK_H;
+        SET_RCLK_L;
+        bitIndex++;
+        if (bitIndex == 8) {
+           *_rowStart++ = pixValue;
+           bitIndex = 0;
+           pixValue = 0;
+        }
+     
     }
 }
 // --------------------------------------------
